@@ -88,14 +88,17 @@ async def test_live_gateway_streaming_and_three_second_fallback(tmp_path):
                 "POST",
                 gateway_url + "/v1/stream",
                 headers={"X-API-Key": API_KEY},
-                json={"prompt": "Hi", "max_tokens": 100},
+                json={"prompt": "[stream-gated]", "max_tokens": 100},
             ) as response:
                 assert response.status_code == 200
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         value = json.loads(line[6:])
                         if "text" in value:
-                            first = first or time.perf_counter()
+                            if first is None:
+                                first = time.perf_counter()
+                                released = await client.post(mock_url + "/_test/release-stream")
+                                assert released.status_code == 200
                             text += value["text"]
                         if "usage" in value:
                             completed = time.perf_counter()
@@ -104,7 +107,8 @@ async def test_live_gateway_streaming_and_three_second_fallback(tmp_path):
             assert first is not None and completed is not None
             ttft = first - started
             assert ttft < 1.0
-            assert completed - first > 0.15  # Client receives text before the provider finishes.
+            # The provider cannot complete until client-visible text releases its barrier.
+            assert first < completed
             started = time.perf_counter()
             fallback = await client.post(
                 gateway_url + "/v1/completions",

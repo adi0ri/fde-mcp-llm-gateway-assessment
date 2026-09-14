@@ -19,7 +19,8 @@ Observed demo behavior:
 | Primary 429 | Backup succeeded in 0.063 seconds |
 | Primary timeout | Backup succeeded in 3.063 seconds |
 
-Timings are one local mock run, not a performance guarantee. The live test checks that
-first text arrives before generation completes and that the real timeout fallback occurs
+Timings are one local mock run, not a performance guarantee. The live test uses a provider
+barrier: generation cannot finish until the client receives its first text and releases
+the mock provider. It also checks that the real timeout fallback occurs
 between 2.9 and 4 seconds. CI performs independent Windows/Linux checks on Python 3.11/3.13;
 the repository's Actions page is the source of truth for those run results.

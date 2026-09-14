@@ -16,6 +16,7 @@ from gateway_lab.wire import WireError, error, parse_rpc
 @asynccontextmanager
 async def lifespan(app):
     app.state.counter = await asyncio.to_thread(TokenCounter)
+    app.state.stream_gate = asyncio.Event()
     yield
 
 
@@ -25,6 +26,13 @@ app = FastAPI(title="Local mock upstreams", lifespan=lifespan)
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.post("/_test/release-stream")
+async def release_stream():
+    """Local integration-test barrier; this mock is never an externally exposed service."""
+    app.state.stream_gate.set()
+    return {"released": True}
 
 
 @app.post("/mcp")
@@ -100,6 +108,10 @@ async def generate(provider: str, request: Request):
     async def chunks():
         for i in range(0, len(text), 3):
             yield "data: " + json.dumps({"delta": text[i : i + 3]}) + "\n\n"
+            if "[stream-gated]" in prompt and i == 6:
+                # Stop after the first safe word. A test releases generation only after
+                # observing client-visible text, proving that the gateway didn't buffer it.
+                await app.state.stream_gate.wait()
             await asyncio.sleep(0.015)
         yield "data: " + json.dumps({"usage": usage}) + "\n\n"
         yield "data: [DONE]\n\n"

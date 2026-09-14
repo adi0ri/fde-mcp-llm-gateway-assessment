@@ -212,4 +212,8 @@ the gateway starts accepting requests. To run offline, prepopulate `TIKTOKEN_CAC
 Tests exercise the official SDK client, raw stdio subprocesses, HTTP mocks, real HTTP
 subprocesses, deterministic time, independent SQLite connections, character-by-character
 PII streams, all sample split points, randomized chunk partitions, and oversized inputs.
+The live streaming test uses the mock-only `[stream-gated]` prompt and
+`POST /_test/release-stream` barrier: the provider cannot finish until the client has
+observed its first sanitized text. This proves incremental delivery without a fragile
+minimum time-gap assertion. The mock and its test controls stay on loopback.
 Local timing measurements describe the mock workload and are not production latency claims.
