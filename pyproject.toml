@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gateway-lab"
+version = "1.0.0"
+description = "Runnable MCP and LLM gateway engineering assessment"
+requires-python = ">=3.11"
+dependencies = [
+  "mcp==1.30.0", "pydantic==2.13.5", "fastapi==0.141.1",
+  "httpx==0.28.1", "aiosqlite==0.22.1", "PyJWT==2.14.0",
+  "uvicorn==0.53.0", "tiktoken==0.14.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "ruff==0.16.7"]
+
+[project.scripts]
+customer-mcp = "gateway_lab.mcp_server:main"
+gateway-demo = "gateway_lab.demo:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gateway_lab"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
